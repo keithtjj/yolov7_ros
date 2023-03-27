@@ -107,7 +107,8 @@ def detect(source, save_img=False):
                 for *xyxy, conf, cls in reversed(det):
                     label = f'{names[int(cls)]} {conf:.2f}'
                     plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
-                    rospy.loginfo(names[int(cls)])
+                    x,y = (int(xyxy[0])+int(xyxy[2]))/2, (int(xyxy[1])+int(xyxy[3]))/2
+                    rospy.loginfo(names[int(cls)]+' x: '+str(x)+' y: '+str(y))
 
             # Print time (inference + NMS)
             print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
@@ -116,9 +117,7 @@ def detect(source, save_img=False):
             cv2.imshow('detector', im0)
             cv2.waitKey(1)  # 1 millisecond
             cv2.imwrite('frame2.png', im0)
-
     print(f'Done. ({time.time() - t0:.3f}s)')
-
 
 if __name__ == '__main__':
     rospy.init_node('yolo_detector')
