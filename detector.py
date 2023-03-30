@@ -27,8 +27,9 @@ def callback(data):
     with torch.no_grad():
         detect('frame.png')
 
-
-weights, view_img, imgsz, trace = '/home/intern/test/store/yolov7.pt', True, 640, True
+script_dir = Path( __file__ ).parent.absolute()
+weights = script_dir.joinpath('yolov7.pt')
+view_img, imgsz, trace = True, 640, True
 
 # Initialize
 set_logging()
