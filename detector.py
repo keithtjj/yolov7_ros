@@ -16,13 +16,16 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized,
 
 import rospy
 from cv_bridge import CvBridge
+from std_msgs.msg import String, Header
 from sensor_msgs.msg import Image
+from yolov7_ros.msg import Detection, Detections
 bridge = CvBridge()
+
+det_pub = rospy.Publisher('/detections', Detections, queue_size=1)
 
 def callback(data):
     global poi_pose
-    rawraw = bridge.imgmsg_to_cv2(data, desired_encoding='passthrough')
-    raw = cv2.resize(cv2.cvtColor(rawraw, cv2.COLOR_BGR2RGB), (0,0), fx=2,fy=2)
+    raw = bridge.imgmsg_to_cv2(data, desired_encoding='bgr8')
     cv2.imwrite('frame.png', raw)
     with torch.no_grad():
         detect('frame.png')
@@ -90,6 +93,7 @@ def detect(source, save_img=False):
         t3 = time_synchronized()
 
         # Process detections
+        det_list = []
         for i, det in enumerate(pred):  # detections per image
             p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
 
@@ -108,8 +112,11 @@ def detect(source, save_img=False):
                 for *xyxy, conf, cls in reversed(det):
                     label = f'{names[int(cls)]} {conf:.2f}'
                     plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
-                    x,y = (int(xyxy[0])+int(xyxy[2]))/2, (int(xyxy[1])+int(xyxy[3]))/2
-                    rospy.loginfo(names[int(cls)]+' x: '+str(x)+' y: '+str(y))
+                    bbox = [int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])]
+                    obj = Detection(name=names[int(cls)], conf=int(conf *100), bbox=bbox)
+                    det_list.append(obj)
+                header = Header(stamp=rospy.Time.now())
+                det_pub.publish(Detections(header=header, dets=det_list))
 
             # Print time (inference + NMS)
             print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
@@ -117,7 +124,7 @@ def detect(source, save_img=False):
             # Stream results
             cv2.imshow('detector', im0)
             cv2.waitKey(1)  # 1 millisecond
-            cv2.imwrite('frame2.png', im0)
+            #cv2.imwrite('frame2.png', im0)
     print(f'Done. ({time.time() - t0:.3f}s)')
 
 if __name__ == '__main__':
