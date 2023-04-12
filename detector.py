@@ -16,12 +16,13 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized,
 
 import rospy
 from cv_bridge import CvBridge
-from std_msgs.msg import String, Header
+from std_msgs.msg import String, Header, Bool
 from sensor_msgs.msg import Image
 from yolov7_ros.msg import Detection, Detections
 bridge = CvBridge()
 
 det_pub = rospy.Publisher('/detections', Detections, queue_size=1)
+pub_tare_toggle = rospy.Publisher('/toggle_tare', Bool, queue_size=5)
 
 def callback(data):
     global poi_pose
@@ -73,7 +74,7 @@ def detect(source, save_img=False):
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
         if img.ndimension() == 3:
             img = img.unsqueeze(0)
-
+        '''
         # Warmup
         if device.type != 'cpu' and (old_img_b != img.shape[0] or old_img_h != img.shape[2] or old_img_w != img.shape[3]):
             old_img_b = img.shape[0]
@@ -81,7 +82,7 @@ def detect(source, save_img=False):
             old_img_w = img.shape[3]
             for i in range(3):
                 model(img)[0]
-
+        '''
         # Inference
         t1 = time_synchronized()
         with torch.no_grad():   # Calculating gradients would cause a GPU memory leak
@@ -115,19 +116,20 @@ def detect(source, save_img=False):
                     bbox = [int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])]
                     obj = Detection(name=names[int(cls)], conf=int(conf *100), bbox=bbox)
                     det_list.append(obj)
-                header = Header(stamp=rospy.Time.now())
-                det_pub.publish(Detections(header=header, dets=det_list))
+            header = Header(stamp=rospy.Time.now())
+            det_pub.publish(Detections(header=header, dets=det_list))    
 
             # Print time (inference + NMS)
-            print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
+            #print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
 
             # Stream results
             cv2.imshow('detector', im0)
             cv2.waitKey(1)  # 1 millisecond
             #cv2.imwrite('frame2.png', im0)
-    print(f'Done. ({time.time() - t0:.3f}s)')
+    #print(f'Done. ({time.time() - t0:.3f}s)')
 
 if __name__ == '__main__':
     rospy.init_node('yolo_detector')
+    pub_tare_toggle.publish(Bool(True))
     rospy.Subscriber('/camera/image', Image, callback)
     rospy.spin()
