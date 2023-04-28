@@ -33,7 +33,7 @@ def callback(data):
 
 script_dir = Path( __file__ ).parent.absolute()
 weights = script_dir.joinpath('yolov7.pt')
-view_img, imgsz, trace = True, 640, True
+view_img, imgsz, trace = True, 320, True
 
 # Initialize
 set_logging()
@@ -131,5 +131,5 @@ def detect(source, save_img=False):
 if __name__ == '__main__':
     rospy.init_node('yolo_detector')
     pub_tare_toggle.publish(Bool(True))
-    rospy.Subscriber('/camera/image', Image, callback)
+    rospy.Subscriber('/camera/image', Image, callback, queue_size=1, buff_size=2**24)
     rospy.spin()
