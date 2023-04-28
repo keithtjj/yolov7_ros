@@ -33,7 +33,7 @@ def callback(data):
 
 script_dir = Path( __file__ ).parent.absolute()
 weights = script_dir.joinpath('yolov7.pt')
-view_img, imgsz, trace = True, 320, True
+view_img, imgsz, trace, thresh = True, 320, True, 0.8
 
 # Initialize
 set_logging()
@@ -90,7 +90,7 @@ def detect(source, save_img=False):
         t2 = time_synchronized()
 
         # Apply NMS
-        pred = non_max_suppression(pred, conf_thres=0.5)
+        pred = non_max_suppression(pred, conf_thres=thresh)
         t3 = time_synchronized()
 
         # Process detections
