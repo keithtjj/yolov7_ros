@@ -16,20 +16,42 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized,
 
 import rospy
 from cv_bridge import CvBridge
+import numpy as np
 from std_msgs.msg import String, Header, Bool
 from sensor_msgs.msg import Image
 from yolov7_ros.msg import Detection, Detections
+
 bridge = CvBridge()
+det_list = []
 
 det_pub = rospy.Publisher('/detections', Detections, queue_size=1)
 pub_tare_toggle = rospy.Publisher('/toggle_tare', Bool, queue_size=5)
 
 def callback(data):
-    global poi_pose
+    global poi_pose, det_list
+    det_list = []
     raw = bridge.imgmsg_to_cv2(data, desired_encoding='bgr8')
     cv2.imwrite('frame.png', raw)
     with torch.no_grad():
         detect('frame.png')
+
+    #find doors
+    yoloed = cv2.imread('frame2.png')
+    lower_b = np.array([0,100,100])
+    upper_b = np.array([0,130,130])
+    mask = cv2.inRange(raw, lower_b, upper_b)
+    cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for c in cnts[0]:
+        x,y,w,h = cv2.boundingRect(c)
+        cv2.rectangle(yoloed,(x,y),(x+w,y+h),(0,255,0),2)
+        area = cv2.contourArea(c)
+        if area > 8000:
+            obj = Detection(name='door', conf=100, bbox=[x, y, x+w, y+h])
+            det_list.append(obj)
+    header = Header(stamp=rospy.Time.now())
+    det_pub.publish(Detections(header=header, dets=det_list))
+    cv2.imshow('detector2', yoloed)
+    cv2.waitKey(1)  # 1 millisecond
 
 script_dir = Path( __file__ ).parent.absolute()
 weights = script_dir.joinpath('yolov7.pt')
@@ -94,7 +116,6 @@ def detect(source, save_img=False):
         t3 = time_synchronized()
 
         # Process detections
-        det_list = []
         for i, det in enumerate(pred):  # detections per image
             p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
 
@@ -115,17 +136,15 @@ def detect(source, save_img=False):
                     plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
                     bbox = [int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])]
                     obj = Detection(name=names[int(cls)], conf=int(conf *100), bbox=bbox)
-                    det_list.append(obj)
-            header = Header(stamp=rospy.Time.now())
-            det_pub.publish(Detections(header=header, dets=det_list))    
+                    det_list.append(obj)  
 
             # Print time (inference + NMS)
             #print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
 
             # Stream results
-            cv2.imshow('detector', im0)
-            cv2.waitKey(1)  # 1 millisecond
-            #cv2.imwrite('frame2.png', im0)
+            #cv2.imshow('detector', im0)
+            #cv2.waitKey(1)  # 1 millisecond
+            cv2.imwrite('frame2.png', im0)
     #print(f'Done. ({time.time() - t0:.3f}s)')
 
 if __name__ == '__main__':
