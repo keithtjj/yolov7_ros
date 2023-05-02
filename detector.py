@@ -45,7 +45,7 @@ def callback(data):
         x,y,w,h = cv2.boundingRect(c)
         cv2.rectangle(yoloed,(x,y),(x+w,y+h),(0,255,0),2)
         area = cv2.contourArea(c)
-        if area > 8000:
+        if area > 6000:
             obj = Detection(name='door', conf=100, bbox=[x, y, x+w, y+h])
             det_list.append(obj)
     header = Header(stamp=rospy.Time.now())
