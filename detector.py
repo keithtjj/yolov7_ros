@@ -23,6 +23,7 @@ from yolov7_ros.msg import Detection, Detections
 
 bridge = CvBridge()
 det_list = []
+view_img, imgsz, trace, thresh, tiny = True, 320, True, 0.8, False
 
 det_pub = rospy.Publisher('/detections', Detections, queue_size=1)
 pub_tare_toggle = rospy.Publisher('/toggle_tare', Bool, queue_size=5)
@@ -30,6 +31,7 @@ pub_tare_toggle = rospy.Publisher('/toggle_tare', Bool, queue_size=5)
 def callback(data):
     global poi_pose, det_list
     det_list = []
+    t1 = time_synchronized()
     raw = bridge.imgmsg_to_cv2(data, desired_encoding='bgr8')
     cv2.imwrite('frame.png', raw)
     with torch.no_grad():
@@ -50,12 +52,19 @@ def callback(data):
             det_list.append(obj)
     header = Header(stamp=rospy.Time.now())
     det_pub.publish(Detections(header=header, dets=det_list))
+    t2 = time_synchronized()
+    dt = 1E3 * (t2-t1)
+    fps = 1/(t2-t1)
+    cv2.putText(yoloed, f'{dt:.1f}', (280, 155), 1, 1, (0,0,0))
+    cv2.putText(yoloed, f'{fps:.1f}', (280, 170), 1, 1, (0,0,0))
     cv2.imshow('detector2', yoloed)
     cv2.waitKey(1)  # 1 millisecond
 
 script_dir = Path( __file__ ).parent.absolute()
-weights = script_dir.joinpath('yolov7.pt')
-view_img, imgsz, trace, thresh = True, 320, True, 0.8
+if tiny == True:
+    weights = script_dir.joinpath('yolov7-tiny.pt')
+else:
+    weights = script_dir.joinpath('yolov7.pt')
 
 # Initialize
 set_logging()
