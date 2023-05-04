@@ -23,7 +23,7 @@ from yolov7_ros.msg import Detection, Detections
 
 bridge = CvBridge()
 det_list = []
-view_img, imgsz, trace, thresh, tiny = True, 320, True, 0.8, False
+view_img, imgsz, trace, thresh, tiny = True, 320, True, 0.8, True
 
 det_pub = rospy.Publisher('/detections', Detections, queue_size=1)
 pub_tare_toggle = rospy.Publisher('/toggle_tare', Bool, queue_size=5)
