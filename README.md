@@ -1,6 +1,5 @@
 # yolov7-ros
-Forked from official YOLOv7 repo.  
-See [here](https://github.com/WongKinYiu/yolov7) for more information on detection variables.
+Forked from official YOLOv7 repo. See [here](https://github.com/WongKinYiu/yolov7) for more information on detection variables.
 
 
 ## Getting Started
