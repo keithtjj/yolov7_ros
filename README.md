@@ -1,4 +1,6 @@
 # yolov7-ros
+Forked from official YOLOv7 repo.
+See [here](https://github.com/WongKinYiu/yolov7) for more information on detection variables.
 ## Getting Started
 1) Install NVIDIA GPU drivers and CUDA Toolkit
 2) Install `requirements.txt`
