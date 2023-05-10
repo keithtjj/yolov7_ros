@@ -1,6 +1,8 @@
 # yolov7-ros
-Forked from official YOLOv7 repo.
+Forked from official YOLOv7 repo.  
 See [here](https://github.com/WongKinYiu/yolov7) for more information on detection variables.
+
+
 ## Getting Started
 1) Install NVIDIA GPU drivers and CUDA Toolkit
 2) Install `requirements.txt`
@@ -14,7 +16,7 @@ pip3 install -r requirements.txt
 rosrun yolov7_ros detector.py
 ```
 6) Stream should start and detections output to `/detections` topic as `Detections` message type.
----
+
 
 ## Custom Message Types
 ### Detections
