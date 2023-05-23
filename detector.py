@@ -37,7 +37,7 @@ def callback(data):
     with torch.no_grad():
         detect('frame.png')
 
-    #find doors
+    #find doors aka yellow
     yoloed = cv2.imread('frame2.png')
     lower_b = np.array([0,100,100])
     upper_b = np.array([0,130,130])
@@ -47,9 +47,10 @@ def callback(data):
         x,y,w,h = cv2.boundingRect(c)
         cv2.rectangle(yoloed,(x,y),(x+w,y+h),(0,255,0),2)
         area = cv2.contourArea(c)
-        if area > 6000:
+        if area > 4000:
             obj = Detection(name='door', conf=100, bbox=[x, y, x+w, y+h])
             det_list.append(obj)
+            
     header = Header(stamp=rospy.Time.now())
     det_pub.publish(Detections(header=header, dets=det_list))
     t2 = time_synchronized()
