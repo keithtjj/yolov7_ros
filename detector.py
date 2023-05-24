@@ -26,7 +26,6 @@ det_list = []
 view_img, imgsz, trace, thresh, tiny = True, 320, True, 0.8, True
 
 det_pub = rospy.Publisher('/detections', Detections, queue_size=1)
-pub_tare_toggle = rospy.Publisher('/toggle_tare', Bool, queue_size=5)
 
 def callback(data):
     global poi_pose, det_list
@@ -40,14 +39,14 @@ def callback(data):
     #find doors aka yellow
     yoloed = cv2.imread('frame2.png')
     lower_b = np.array([0,100,100])
-    upper_b = np.array([0,130,130])
+    upper_b = np.array([0,210,210])
     mask = cv2.inRange(raw, lower_b, upper_b)
     cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for c in cnts[0]:
         x,y,w,h = cv2.boundingRect(c)
         cv2.rectangle(yoloed,(x,y),(x+w,y+h),(0,255,0),2)
         area = cv2.contourArea(c)
-        if area > 4000:
+        if area > 3000:
             obj = Detection(name='door', conf=100, bbox=[x, y, x+w, y+h])
             det_list.append(obj)
             
@@ -159,6 +158,6 @@ def detect(source, save_img=False):
 
 if __name__ == '__main__':
     rospy.init_node('yolo_detector')
-    pub_tare_toggle.publish(Bool(True))
+    print('yolo ready')
     rospy.Subscriber('/camera/image', Image, callback, queue_size=1, buff_size=2**24)
     rospy.spin()
